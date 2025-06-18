@@ -6,48 +6,72 @@ import java.time.LocalDate;
 
 public class UserRegistrationDTO {
 
-    @NotBlank
+    @NotBlank(message = "Student name is required")
     private String studentName;
 
-    @NotNull
-    @Min(1)
+    @NotNull(message = "Age is required")
+    @Min(value = 1, message = "Age must be at least 1")
     private Integer age;
 
-    @Pattern(regexp = "\\d{14}")
+    @NotBlank(message = "National ID is required")
+    @Pattern(regexp = "\\d{14}", message = "National ID must be 14 digits")
     private String nationalId;
 
-    @NotBlank
+    @NotBlank(message = "Phone number is required")
+    @Pattern(regexp = "^01[0-9]{9}$", message = "Phone number must be a valid Egyptian mobile number")
     private String phoneNumber;
 
+    @Size(max = 100, message = "Place of work must be at most 100 characters")
     private String placeOfWork;
 
+    @Size(max = 100, message = "Job title must be at most 100 characters")
     private String job;
 
+    @Size(max = 255, message = "Address must be at most 255 characters")
     private String address;
 
+    @Size(max = 100, message = "Level of study must be at most 100 characters")
+    @NotBlank(message = "Level of study is required")
     private String levelOfStudy;
 
     // === AcceptanceData ===
 
+    @NotBlank(message = "Previous Saving Amount is required")
     private String lastSavingAmount;
 
+    @Size(max = 50, message = "Level must be at most 50 characters")
     private String level;
 
+    @Size(max = 100, message = "Teacher name must be at most 100 characters")
+    @NotBlank(message = "Teacher name is required")
     private String examineTeacherName;
 
     // === ManagementData ===
 
+    @Future(message = "Attendance date must be in the future")
+    @NotNull(message = "Attendance Date is required")
     private LocalDate actualAttendanceDate;
 
+    @Size(max = 50, message = "Specified time must be at most 50 characters")
+    @NotBlank(message = "Specified time is required")
     private String specifiedTime;
 
+    @Pattern(regexp = "^\\d+(\\.\\d{1,2})?$", message = "Institute fees must be a number")
+    @NotBlank(message = "Fees is required")
     private String instituteFees;
+
+    @NotBlank(message = "Student group ID is required")
     private String studentGroupId;
 
+    @Size(max = 50, message = "Receipt number must be at most 50 characters")
     private String receiptNumber;
 
+    @Future(message = "Submission date must be in the Future")
+    @NotNull(message = "Submission date is required")
     private LocalDate submissionDate;
 
+    @Size(max = 100, message = "Receiver name must be at most 100 characters")
+    @NotBlank(message = "Receiver name is required")
     private String receiver;
 
     public String getStudentName() {
