@@ -1,12 +1,18 @@
 package com.sabeel.demo_sebeel.service;
 
+import com.sabeel.demo_sebeel.Enum.UserStatus;
+import com.sabeel.demo_sebeel.dto.UserDto;
 import com.sabeel.demo_sebeel.dto.UserRegistrationDTO;
 import com.sabeel.demo_sebeel.entity.AcceptanceData;
 import com.sabeel.demo_sebeel.entity.ManagementData;
 import com.sabeel.demo_sebeel.entity.User;
 import com.sabeel.demo_sebeel.repository.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserService {
@@ -43,6 +49,84 @@ public class UserService {
         user.setManagement(management);
 
         return userRepository.save(user);
+    }
+
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    public Optional<User> getUserById(long id) {
+        User user = userRepository.getUserById(id);
+        return Optional.ofNullable(user);
+    }
+
+    public Optional<User> findByNationalId(String id) {
+        User user = userRepository.getUserByNationalId(id);
+        return Optional.ofNullable(user);
+    }
+
+    public Optional<User> findByName(String name) {
+        User user = userRepository.getUserByStudentName(name);
+        return Optional.ofNullable(user);
+    }
+
+    public Optional<User> findByPhoneNumber(String phoneNumber) {
+        User user = userRepository.getUserByPhoneNumber(phoneNumber);
+        return Optional.ofNullable(user);
+    }
+
+    public Optional<List<User>> findByStatus(UserStatus status) {
+        List<User> users = userRepository.getUserByStatus(status);
+        return Optional.ofNullable(users);
+    }
+
+    public User updateStatus(long id, UserStatus status) {
+        Optional<User> user = userRepository.findById(id);
+
+        if (user.isPresent()) {
+            User existingUser = user.get();
+            existingUser.setStatus(status);
+            userRepository.save(existingUser);
+            return existingUser;
+        } else {
+            throw new EntityNotFoundException("User does not exist");
+        }
+    }
+
+    public User updateUser(long id, UserDto userDto) {
+        Optional<User> user = userRepository.findById(id);
+        if (user.isPresent()) {
+            User existingUser = user.get();
+            existingUser.setStudentName(userDto.getStudentName());
+            existingUser.setPhoneNumber(userDto.getPhoneNumber());
+            existingUser.setStatus(userDto.getStatus());
+            existingUser.setNationalId(userDto.getNationalId());
+            existingUser.setAddress(userDto.getAddress());
+            existingUser.setLevelOfStudy(userDto.getLevelOfStudy());
+            existingUser.setAge(userDto.getAge());
+            existingUser.setPlaceOfWork(userDto.getPlaceOfWork());
+            existingUser.setJob(userDto.getJob());
+            existingUser.getAcceptance().setLastSavingAmount(userDto.getLastSavingAmount());
+            existingUser.getAcceptance().setLevel(userDto.getLevel());
+            existingUser.getAcceptance().setExamineTeacherName(userDto.getExamineTeacherName());
+            existingUser.getManagement().setActualAttendanceDate(userDto.getActualAttendanceDate());
+            existingUser.getManagement().setSpecifiedTime(userDto.getSpecifiedTime());
+            existingUser.getManagement().setInstituteFees(userDto.getInstituteFees());
+            existingUser.getManagement().setStudentGroupId(userDto.getStudentGroupId());
+            existingUser.getManagement().setReceiptNumber(userDto.getReceiptNumber());
+            existingUser.getManagement().setSubmissionDate(userDto.getSubmissionDate());
+            existingUser.getManagement().setReceiver(userDto.getReceiver());
+
+            return userRepository.save(existingUser);
+        }
+        else {
+            throw new EntityNotFoundException("User does not exist");
+        }
+    }
+
+    public void deleteUser(long id) {
+        Optional<User> user = userRepository.findById(id);
+        user.ifPresent(userRepository::delete);
     }
 }
 
