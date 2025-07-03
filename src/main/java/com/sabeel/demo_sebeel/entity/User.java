@@ -1,4 +1,5 @@
 package com.sabeel.demo_sebeel.entity;
+import com.sabeel.demo_sebeel.Enum.UserStatus;
 import jakarta.persistence.*;
 
 @Entity
@@ -23,6 +24,16 @@ public class User {
     private String address;
 
     private String levelOfStudy;
+
+    public UserStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(UserStatus status) {
+        this.status = status;
+    }
+
+    private UserStatus status;
 
     @Embedded
     private AcceptanceData acceptance;
