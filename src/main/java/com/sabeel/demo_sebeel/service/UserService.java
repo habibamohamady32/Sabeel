@@ -51,8 +51,9 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public Optional<List<User>> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        return Optional.ofNullable(users);
     }
 
     public Optional<User> getUserById(long id) {
