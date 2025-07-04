@@ -33,6 +33,7 @@ public class User {
         this.status = status;
     }
 
+    @Enumerated(EnumType.STRING)
     private UserStatus status;
 
     @Embedded
