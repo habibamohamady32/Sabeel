@@ -1,8 +1,8 @@
 package com.sabeel.demo_sebeel.controller;
 
 import com.sabeel.demo_sebeel.Enum.UserStatus;
-import com.sabeel.demo_sebeel.dto.UserDto;
 import com.sabeel.demo_sebeel.dto.UserRegistrationDTO;
+import com.sabeel.demo_sebeel.dto.UserRequestDto;
 import com.sabeel.demo_sebeel.entity.User;
 import com.sabeel.demo_sebeel.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,7 +33,7 @@ public class UserController {
     @Operation(summary = "Register a new user", description = "Register a new user with name, phone, national ID, etc.")
     @ApiResponse(responseCode = "200", description = "User registered successfully")
     @PostMapping("/register")
-    public ResponseEntity<String> registerUser(@RequestBody @Valid UserRegistrationDTO dto) {
+    public ResponseEntity<String> registerUser(@RequestBody @Valid UserRequestDto dto) {
         userService.saveUser(dto);
         return ResponseEntity.ok("User registered successfully");
     }
@@ -117,7 +117,7 @@ public class UserController {
     @PutMapping("/update-user/{id}")
     @Operation(summary = "Update user information", description = "Update full user information by ID")
     @ApiResponse(responseCode = "200", description = "User updated successfully")
-    public ResponseEntity<User> updateUser(@PathVariable long id, @Valid @RequestBody UserDto userDto) {
+    public ResponseEntity<User> updateUser(@PathVariable long id, @Valid @RequestBody UserRequestDto userDto) {
         return ResponseEntity.ok(userService.updateUser(id, userDto));
     }
 

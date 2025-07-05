@@ -1,5 +1,6 @@
 package com.sabeel.demo_sebeel.dto;
 
+import com.sabeel.demo_sebeel.Enum.UserStatus;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDate;
@@ -34,6 +35,8 @@ public class UserRegistrationDTO {
     @NotBlank(message = "Level of study is required")
     private String levelOfStudy;
 
+    private UserStatus status;
+
     // === AcceptanceData ===
 
     @NotBlank(message = "Previous Saving Amount is required")
@@ -66,7 +69,7 @@ public class UserRegistrationDTO {
     @Size(max = 50, message = "Receipt number must be at most 50 characters")
     private String receiptNumber;
 
-    @Future(message = "Submission date must be in the Future")
+    @FutureOrPresent(message = "Submission date must be in the Future")
     @NotNull(message = "Submission date is required")
     private LocalDate submissionDate;
 

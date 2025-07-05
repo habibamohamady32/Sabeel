@@ -1,8 +1,7 @@
 package com.sabeel.demo_sebeel.service;
 
 import com.sabeel.demo_sebeel.Enum.UserStatus;
-import com.sabeel.demo_sebeel.dto.UserDto;
-import com.sabeel.demo_sebeel.dto.UserRegistrationDTO;
+import com.sabeel.demo_sebeel.dto.UserRequestDto;
 import com.sabeel.demo_sebeel.entity.AcceptanceData;
 import com.sabeel.demo_sebeel.entity.ManagementData;
 import com.sabeel.demo_sebeel.entity.User;
@@ -20,7 +19,7 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
-    public User saveUser(UserRegistrationDTO dto) {
+    public User saveUser(UserRequestDto dto) {
         User user = new User();
         user.setStudentName(dto.getStudentName());
         user.setAge(dto.getAge());
@@ -94,7 +93,7 @@ public class UserService {
         }
     }
 
-    public User updateUser(long id, UserDto userDto) {
+    public User updateUser(long id, UserRequestDto userDto) {
         Optional<User> user = userRepository.findById(id);
         if (user.isPresent()) {
             User existingUser = user.get();
