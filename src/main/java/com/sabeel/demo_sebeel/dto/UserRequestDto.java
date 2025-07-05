@@ -6,28 +6,30 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDate;
-
 @Getter
-@Schema(description = "Data Transfer Object for User details")
-public class UserDto {
-
-    @Schema(description = "User ID", example = "1")
-    private long id;
+@Setter
+@Schema(description = "Unified DTO for creating and updating user details")
+public class UserRequestDto {
 
     @Schema(description = "Full name of the student", example = "Ahmed Ali")
+    @NotBlank(message = "Student name is required")
     private String studentName;
 
     @Schema(description = "Age of the student", example = "21")
+    @NotNull(message = "Age is required")
     @Min(value = 1, message = "Age must be at least 1")
     private Integer age;
 
     @Schema(description = "National ID number", example = "29805123456789")
+    @NotBlank(message = "National ID is required")
     @Pattern(regexp = "\\d{14}", message = "National ID must be 14 digits")
     private String nationalId;
 
     @Schema(description = "Phone number", example = "01012345678")
+    @NotBlank(message = "Phone number is required")
     @Pattern(regexp = "^01[0-9]{9}$", message = "Phone number must be a valid Egyptian mobile number")
     private String phoneNumber;
 
@@ -37,7 +39,6 @@ public class UserDto {
 
     @Schema(description = "Job title", example = "Accountant")
     @Size(max = 100, message = "Job title must be at most 100 characters")
-
     private String job;
 
     @Schema(description = "Home address", example = "Cairo, Nasr City")
@@ -45,10 +46,17 @@ public class UserDto {
     private String address;
 
     @Schema(description = "Level of study", example = "Level 1")
+    @NotBlank(message = "Level of study is required")
     @Size(max = 100, message = "Level of study must be at most 100 characters")
     private String levelOfStudy;
 
+    @Schema(description = "User status", example = "ACTIVE")
+    private UserStatus status;
+
+    // === Acceptance Data ===
+
     @Schema(description = "Last saving amount", example = "500 EGP")
+    @NotBlank(message = "Previous Saving Amount is required")
     private String lastSavingAmount;
 
     @Schema(description = "Memorization level", example = "10 Parts")
@@ -56,18 +64,24 @@ public class UserDto {
     private String level;
 
     @Schema(description = "Name of the examining teacher", example = "Sheikh Mahmoud")
+    @NotBlank(message = "Teacher name is required")
     @Size(max = 100, message = "Teacher name must be at most 100 characters")
     private String examineTeacherName;
 
-    @Schema(description = "Actual date of attendance", example = "2024-06-01")
-    @Future(message = "Attendance date must be in the future")
+    // === Management Data ===
+
+    @Schema(description = "Actual date of attendance", example = "2025-08-01")
+    @NotNull(message = "Attendance Date is required")
+    @FutureOrPresent(message = "Attendance date must be today or in the future")
     private LocalDate actualAttendanceDate;
 
     @Schema(description = "Specified time for attendance", example = "10:00 AM")
+    @NotBlank(message = "Specified time is required")
     @Size(max = 50, message = "Specified time must be at most 50 characters")
     private String specifiedTime;
 
-    @Schema(description = "Institute fees", example = "250 EGP")
+    @Schema(description = "Institute fees", example = "250")
+    @NotBlank(message = "Fees is required")
     @Pattern(regexp = "^\\d+(\\.\\d{1,2})?$", message = "Institute fees must be a number")
     private String instituteFees;
 
@@ -79,15 +93,13 @@ public class UserDto {
     @Size(max = 50, message = "Receipt number must be at most 50 characters")
     private String receiptNumber;
 
-    @Schema(description = "Date the form was submitted", example = "2024-06-03")
-    @Future(message = "Submission date must be in the Future")
+    @Schema(description = "Date the form was submitted", example = "2025-08-02")
+    @NotNull(message = "Submission date is required")
+    @FutureOrPresent(message = "Submission date must be today or in the future")
     private LocalDate submissionDate;
 
     @Schema(description = "Name of the receiver", example = "Mohamed Youssef")
+    @NotBlank(message = "Receiver name is required")
     @Size(max = 100, message = "Receiver name must be at most 100 characters")
     private String receiver;
-
-    @Schema(description = "User status", example = "ACTIVE")
-    @Enumerated(EnumType.STRING)
-    private UserStatus status;
 }
