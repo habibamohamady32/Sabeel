@@ -9,6 +9,21 @@ import com.sabeel.demo_sebeel.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.sabeel.demo_sebeel.dto.ImportReport;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.DateUtil;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.InputStream;
+import java.time.LocalDate;
+import java.util.*;
+import java.util.stream.Collectors;
+
+
 
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +44,7 @@ public class UserService {
         user.setJob(dto.getJob());
         user.setAddress(dto.getAddress());
         user.setLevelOfStudy(dto.getLevelOfStudy());
+        user.setStatus(dto.getStatus() != null ? dto.getStatus() : UserStatus.INACTIVE);
 
         AcceptanceData acceptance = new AcceptanceData();
         acceptance.setLastSavingAmount(dto.getLastSavingAmount());
@@ -128,5 +144,236 @@ public class UserService {
         Optional<User> user = userRepository.findById(id);
         user.ifPresent(userRepository::delete);
     }
+
+
+    @Transactional
+    public ImportReport importFromExcel(MultipartFile file) throws Exception {
+        if (file == null || file.isEmpty()) throw new IllegalArgumentException("Empty file");
+        String fn = Optional.ofNullable(file.getOriginalFilename()).orElse("").toLowerCase();
+        if (!fn.endsWith(".xlsx")) throw new IllegalArgumentException("Only .xlsx files are supported");
+
+        Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+        ImportReport report = new ImportReport();
+        List<User> toPersist = new ArrayList<>();
+
+        try (InputStream is = file.getInputStream();
+             Workbook wb = WorkbookFactory.create(is)) {
+
+            Sheet sheet = wb.getSheetAt(0);
+            if (sheet == null) throw new IllegalArgumentException("No sheet found");
+
+            for (int r = 1; r <= sheet.getLastRowNum(); r++) {
+                Row row = sheet.getRow(r);
+                if (row == null) continue;
+
+                try {
+                    UserRequestDto dto = new UserRequestDto();
+                    int i = 0;
+
+                    i++;
+                    dto.setExamineTeacherName(getString(row.getCell(i++)));
+                    dto.setLastSavingAmount(getString(row.getCell(i++)));
+                    dto.setLevel(getString(row.getCell(i++)));
+                    dto.setAddress(getString(row.getCell(i++)));
+                    dto.setAge(getInteger(row.getCell(i++)));
+                    dto.setJob(getString(row.getCell(i++)));
+                    dto.setLevelOfStudy(getString(row.getCell(i++)));
+                    dto.setActualAttendanceDate(parseLocalDate(row.getCell(i++)));
+                    dto.setInstituteFees(getString(row.getCell(i++)));
+                    dto.setReceiptNumber(getString(row.getCell(i++)));
+                    dto.setReceiver(getString(row.getCell(i++)));
+                    dto.setSpecifiedTime(getString(row.getCell(i++)));
+                    dto.setStudentGroupId(getString(row.getCell(i++)));
+                    dto.setSubmissionDate(parseLocalDate(row.getCell(i++)));
+                    dto.setNationalId(getString(row.getCell(i++)));
+                    dto.setPhoneNumber(getString(row.getCell(i++)));
+                    dto.setPlaceOfWork(getString(row.getCell(i++)));
+                    dto.setStudentName(getString(row.getCell(i++)));
+                    dto.setStatus(parseStatus(getString(row.getCell(i++))));
+
+                    Set<ConstraintViolation<UserRequestDto>> v = validator.validate(dto);
+                    if (!v.isEmpty()) {
+                        report.addError(r + 1, v.stream()
+                                .map(err -> err.getPropertyPath() + " " + err.getMessage())
+                                .collect(Collectors.joining("; ")));
+                        continue;
+                    }
+
+                    if (userRepository.existsByNationalId(dto.getNationalId())) {
+                        report.addSkipped(r + 1, "Duplicate nationalId: " + dto.getNationalId());
+                        continue;
+                    }
+
+                    User u = new User();
+                    u.setStudentName(dto.getStudentName());
+                    u.setAge(dto.getAge());
+                    u.setNationalId(dto.getNationalId());
+                    u.setPhoneNumber(dto.getPhoneNumber());
+                    u.setPlaceOfWork(dto.getPlaceOfWork());
+                    u.setJob(dto.getJob());
+                    u.setAddress(dto.getAddress());
+                    u.setLevelOfStudy(dto.getLevelOfStudy());
+                    u.setStatus(dto.getStatus() != null ? dto.getStatus() : UserStatus.INACTIVE);
+
+                    AcceptanceData acc = new AcceptanceData();
+                    acc.setLastSavingAmount(dto.getLastSavingAmount());
+                    acc.setLevel(dto.getLevel());
+                    acc.setExamineTeacherName(dto.getExamineTeacherName());
+                    u.setAcceptance(acc);
+
+                    ManagementData mgmt = new ManagementData();
+                    mgmt.setActualAttendanceDate(dto.getActualAttendanceDate());
+                    mgmt.setSpecifiedTime(dto.getSpecifiedTime());
+                    mgmt.setInstituteFees(dto.getInstituteFees());
+                    mgmt.setStudentGroupId(dto.getStudentGroupId());
+                    mgmt.setReceiptNumber(dto.getReceiptNumber());
+                    mgmt.setSubmissionDate(dto.getSubmissionDate());
+                    mgmt.setReceiver(dto.getReceiver());
+                    u.setManagement(mgmt);
+
+                    toPersist.add(u);
+                    report.incrementSuccess();
+
+                } catch (Exception e) {
+                    report.addError(r + 1, e.getMessage());
+                }
+            }
+        }
+
+        if (!toPersist.isEmpty()) userRepository.saveAll(toPersist);
+        return report;
+    }
+
+    private String getString(Cell cell) {
+        if (cell == null) return null;
+        return switch (cell.getCellType()) {
+            case STRING -> cell.getStringCellValue().trim();
+            case NUMERIC -> {
+                if (DateUtil.isCellDateFormatted(cell)) {
+                    yield cell.getLocalDateTimeCellValue().toLocalDate().toString();
+                } else {
+                    cell.setCellType(CellType.STRING);
+                    yield cell.getStringCellValue().trim();
+                }
+            }
+            case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
+            case FORMULA -> {
+                try { yield cell.getStringCellValue().trim(); }
+                catch (Exception e) {
+                    if (DateUtil.isCellDateFormatted(cell)) {
+                        yield cell.getLocalDateTimeCellValue().toLocalDate().toString();
+                    }
+                    cell.setCellType(CellType.STRING);
+                    yield cell.getStringCellValue().trim();
+                }
+            }
+            default -> null;
+        };
+    }
+    private Integer getInteger(Cell cell) {
+        String s = getString(cell);
+        if (s == null || s.isBlank()) return null;
+        return Integer.valueOf(s);
+    }
+    private LocalDate parseLocalDate(Cell cell) {
+        if (cell == null) return null;
+        if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
+            return cell.getLocalDateTimeCellValue().toLocalDate();
+        }
+        String s = getString(cell);
+        return (s == null || s.isBlank()) ? null : LocalDate.parse(s);
+    }
+    private UserStatus parseStatus(String raw) {
+        if (raw == null || raw.isBlank()) return null;
+        String s = raw.trim();
+        try { return UserStatus.valueOf(s.toUpperCase()); }
+        catch (IllegalArgumentException ignore) {
+            try {
+                int n = Integer.parseInt(s);
+                return switch (n) {
+                    case 0 -> UserStatus.INACTIVE;
+                    case 1 -> UserStatus.ACTIVE;
+                    case 2 -> UserStatus.SUSPENDED;
+                    default -> throw new IllegalArgumentException("Invalid status code: " + n);
+                };
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Invalid status: " + raw + " (use 0|1|2 or INACTIVE|ACTIVE|SUSPENDED)");
+            }
+        }
+    }
+
+    public byte[] generateUsersTemplate() throws Exception {
+        try (Workbook wb = new XSSFWorkbook()) {
+            Sheet sheet = wb.createSheet("users");
+
+            String[] headers = {
+                    "id",
+                    "examine_teacher_name",
+                    "last_saving_amount",
+                    "level",
+                    "address",
+                    "age",
+                    "job",
+                    "level_of_study",
+                    "actual_attendance_date",
+                    "institute_fees",
+                    "receipt_number",
+                    "receiver",
+                    "specified_time",
+                    "student_group_id",
+                    "submission_date",
+                    "national_id",
+                    "phone_number",
+                    "place_of_work",
+                    "student_name",
+                    "status"
+            };
+
+            CellStyle headerStyle = wb.createCellStyle();
+            Font bold = wb.createFont();
+            bold.setBold(true);
+            headerStyle.setFont(bold);
+
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < headers.length; i++) {
+                Cell c = headerRow.createCell(i);
+                c.setCellValue(headers[i]);
+                c.setCellStyle(headerStyle);
+            }
+            Row sample = sheet.createRow(1);
+            int i = 0;
+            sample.createCell(i++).setCellValue("");
+            sample.createCell(i++).setCellValue("Sheikh Mahmoud");
+            sample.createCell(i++).setCellValue("500");
+            sample.createCell(i++).setCellValue("10 Parts");
+            sample.createCell(i++).setCellValue("Cairo, Nasr City");
+            sample.createCell(i++).setCellValue(21);
+            sample.createCell(i++).setCellValue("Accountant");
+            sample.createCell(i++).setCellValue("Level 1");
+            sample.createCell(i++).setCellValue("2025-10-01");
+            sample.createCell(i++).setCellValue("250");
+            sample.createCell(i++).setCellValue("RCPT20240601");
+            sample.createCell(i++).setCellValue("Mohamed Youssef");
+            sample.createCell(i++).setCellValue("10:00 AM");
+            sample.createCell(i++).setCellValue("Group A");
+            sample.createCell(i++).setCellValue("2025-10-02");
+            sample.createCell(i++).setCellValue("29805123456789");
+            sample.createCell(i++).setCellValue("01012345678");
+            sample.createCell(i++).setCellValue("ABC Company");
+            sample.createCell(i++).setCellValue("Ahmed Ali");
+            sample.createCell(i++).setCellValue(1);
+
+            for (int col = 0; col < headers.length; col++) {
+                sheet.autoSizeColumn(col);
+            }
+
+            try (java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream()) {
+                wb.write(bos);
+                return bos.toByteArray();
+            }
+        }
+    }
+
+
 }
 

@@ -1,9 +1,6 @@
 package com.sabeel.demo_sebeel.dto;
 
 import com.sabeel.demo_sebeel.Enum.UserStatus;
-import jakarta.persistence.Column;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDate;
@@ -38,8 +35,6 @@ public class UserRegistrationDTO {
     @NotBlank(message = "Level of study is required")
     private String levelOfStudy;
 
-    @Enumerated(EnumType.ORDINAL)
-    @Column(nullable = false)
     private UserStatus status;
 
     // === AcceptanceData ===

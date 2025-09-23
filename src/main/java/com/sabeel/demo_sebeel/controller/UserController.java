@@ -1,6 +1,7 @@
 package com.sabeel.demo_sebeel.controller;
 
 import com.sabeel.demo_sebeel.Enum.UserStatus;
+import com.sabeel.demo_sebeel.dto.ImportReport;
 import com.sabeel.demo_sebeel.dto.UserRegistrationDTO;
 import com.sabeel.demo_sebeel.dto.UserRequestDto;
 import com.sabeel.demo_sebeel.entity.User;
@@ -12,7 +13,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -128,4 +131,29 @@ public class UserController {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping(path = "/import", consumes = "multipart/form-data")
+    public ResponseEntity<ImportReport> importUsers(@RequestPart("file") org.springframework.web.multipart.MultipartFile file) throws Exception {
+        return ResponseEntity.ok(userService.importFromExcel(file));
+    }
+
+    @GetMapping(
+            value = "/template",
+            produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    public ResponseEntity<byte[]> downloadTemplate() throws Exception {
+        byte[] bytes = userService.generateUsersTemplate();
+        if (bytes == null || bytes.length == 0) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=users_template.xlsx")
+                .header(HttpHeaders.CACHE_CONTROL, "no-store, no-cache, must-revalidate, max-age=0")
+                .contentLength(bytes.length)
+                .body(bytes);
+    }
+
 }

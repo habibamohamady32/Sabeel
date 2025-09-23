@@ -17,4 +17,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     User getUserByPhoneNumber(String phoneNumber);
 
     List<User> getUserByStatus(UserStatus status);
+
+    boolean existsByNationalId(String nationalId);
+
 }
