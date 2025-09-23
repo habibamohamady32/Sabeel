@@ -2,6 +2,7 @@ package com.sabeel.demo_sebeel.dto;
 
 import com.sabeel.demo_sebeel.Enum.UserStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.Column;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.*;
@@ -51,6 +52,8 @@ public class UserRequestDto {
     private String levelOfStudy;
 
     @Schema(description = "User status", example = "ACTIVE")
+    @Column(nullable = false)
+    @Enumerated(EnumType.ORDINAL) //0=INACTIVE,1=ACTIVE,2=SUSPENDED
     private UserStatus status;
 
     // === Acceptance Data ===
