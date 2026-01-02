@@ -44,7 +44,7 @@ public class UserService {
         user.setJob(dto.getJob());
         user.setAddress(dto.getAddress());
         user.setLevelOfStudy(dto.getLevelOfStudy());
-        user.setStatus(dto.getStatus() != null ? dto.getStatus() : UserStatus.INACTIVE);
+        user.setStatus(dto.getStatus());
 
         AcceptanceData acceptance = new AcceptanceData();
         acceptance.setLastSavingAmount(dto.getLastSavingAmount());
@@ -213,7 +213,7 @@ public class UserService {
                     u.setJob(dto.getJob());
                     u.setAddress(dto.getAddress());
                     u.setLevelOfStudy(dto.getLevelOfStudy());
-                    u.setStatus(dto.getStatus() != null ? dto.getStatus() : UserStatus.INACTIVE);
+                    u.setStatus(dto.getStatus());
 
                     AcceptanceData acc = new AcceptanceData();
                     acc.setLastSavingAmount(dto.getLastSavingAmount());
@@ -285,20 +285,14 @@ public class UserService {
     }
     private UserStatus parseStatus(String raw) {
         if (raw == null || raw.isBlank()) return null;
-        String s = raw.trim();
-        try { return UserStatus.valueOf(s.toUpperCase()); }
-        catch (IllegalArgumentException ignore) {
-            try {
-                int n = Integer.parseInt(s);
-                return switch (n) {
-                    case 0 -> UserStatus.INACTIVE;
-                    case 1 -> UserStatus.ACTIVE;
-                    case 2 -> UserStatus.SUSPENDED;
-                    default -> throw new IllegalArgumentException("Invalid status code: " + n);
-                };
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Invalid status: " + raw + " (use 0|1|2 or INACTIVE|ACTIVE|SUSPENDED)");
-            }
+
+        try {
+            return UserStatus.valueOf(raw.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(
+                    "Invalid status: " + raw +
+                            " (Allowed: " + Arrays.toString(UserStatus.values()) + ")"
+            );
         }
     }
 
